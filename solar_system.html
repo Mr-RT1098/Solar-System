@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solar System Explorer</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><radialGradient id='g' cx='40%25' cy='40%25'><stop offset='0%25' stop-color='%23fff7a0'/><stop offset='40%25' stop-color='%23ffcc00'/><stop offset='80%25' stop-color='%23ff8800'/><stop offset='100%25' stop-color='%23cc4400'/></radialGradient></defs><circle cx='32' cy='32' r='16' fill='url(%23g)'/><g stroke='%23ffcc00' stroke-width='2.5' stroke-linecap='round' opacity='0.85'><line x1='32' y1='4' x2='32' y2='12'/><line x1='32' y1='52' x2='32' y2='60'/><line x1='4' y1='32' x2='12' y2='32'/><line x1='52' y1='32' x2='60' y2='32'/><line x1='12.2' y1='12.2' x2='17.9' y2='17.9'/><line x1='46.1' y1='46.1' x2='51.8' y2='51.8'/><line x1='12.2' y1='51.8' x2='17.9' y2='46.1'/><line x1='46.1' y1='17.9' x2='51.8' y2='12.2'/></g></svg>">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --sun-glow: #ffcc00;
+      --space-bg: #00010a;
+      --text-glow: #88ccff;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--space-bg);
+      color: #fff;
+      font-family: 'Exo 2', sans-serif;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* ── Stars background ── */
+    #stars-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ── Header ── */
+    header {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 40px 20px 10px;
+    }
+
+    header h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(2rem, 5vw, 4rem);
+      font-weight: 900;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, #ffcc00, #ff8800, #ffcc00);
+      background-size: 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmer 3s linear infinite;
+    }
+
+    header p {
+      color: #8899bb;
+      font-size: 0.95rem;
+      letter-spacing: 0.15em;
+      margin-top: 8px;
+      text-transform: uppercase;
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: 0%
+      }
+
+      100% {
+        background-position: 200%
+      }
+    }
+
+    /* ── Solar System Container ── */
+    #solar-wrap {
+      position: relative;
+      z-index: 5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 960px;
+      margin: 20px 0;
+    }
+
+    #orrery {
+      position: relative;
+      width: 940px;
+      height: 940px;
+      flex-shrink: 0;
+    }
+
+    /* ── Orbits ── */
+    .orbit {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      border: 1px solid rgba(100, 150, 255, 0.15);
+    }
+
+    /* ── Orbit animation ── */
+    .orbit-arm {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      transform-origin: 0 0;
+      animation: revolve linear infinite;
+    }
+
+    @keyframes revolve {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ── Planet dot ── */
+    .planet-dot {
+      position: absolute;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      z-index: 20;
+    }
+
+    .planet-dot:hover {
+      transform: scale(1.6) !important;
+    }
+
+    /* ── Sun ── */
+    #sun {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fff7a0, #ffcc00 40%, #ff6600 80%, #cc3300);
+      box-shadow:
+        0 0 30px 10px #ffcc0088,
+        0 0 70px 25px #ff880055,
+        0 0 120px 50px #ff440022;
+      animation: sun-pulse 3s ease-in-out infinite;
+      z-index: 10;
+      cursor: pointer;
+    }
+
+    @keyframes sun-pulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 30px 10px #ffcc0088, 0 0 70px 25px #ff880055, 0 0 120px 50px #ff440022;
+      }
+
+      50% {
+        box-shadow: 0 0 45px 18px #ffcc00aa, 0 0 90px 35px #ff880077, 0 0 160px 70px #ff440033;
+      }
+    }
+
+    /* ── Planet Labels ── */
+    .planet-label {
+      position: absolute;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 9px;
+      color: #aaccff;
+      white-space: nowrap;
+      pointer-events: none;
+      top: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      letter-spacing: 0.1em;
+      text-shadow: 0 0 8px #88aaff;
+      opacity: 0.85;
+    }
+
+    /* ── Info Panel ── */
+    #info-panel {
+      position: fixed;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 100;
+      width: 260px;
+      background: rgba(5, 15, 40, 0.92);
+      border: 1px solid rgba(100, 160, 255, 0.25);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 0 40px rgba(50, 100, 255, 0.1);
+      transition: opacity 0.4s, transform 0.4s;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #info-panel.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #info-panel .close-btn {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      background: none;
+      border: none;
+      color: #667;
+      cursor: pointer;
+      font-size: 1.2rem;
+    }
+
+    #info-panel .planet-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      margin: 0 auto 14px;
+      display: block;
+    }
+
+    #info-panel h2 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1rem;
+      text-align: center;
+      color: #fff;
+      margin-bottom: 4px;
+      letter-spacing: 0.12em;
+    }
+
+    #info-panel .tagline {
+      text-align: center;
+      font-size: 0.72rem;
+      color: #6688aa;
+      letter-spacing: 0.08em;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+
+    #info-panel .stats {
+      border-top: 1px solid rgba(100, 150, 255, 0.15);
+      padding-top: 12px;
+    }
+
+    #info-panel .stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    #info-panel .stat-row span:first-child {
+      color: #6688aa;
+    }
+
+    #info-panel .stat-row span:last-child {
+      color: #cce0ff;
+      font-weight: 600;
+    }
+
+    #info-panel .desc {
+      margin-top: 12px;
+      font-size: 0.78rem;
+      color: #7799bb;
+      line-height: 1.6;
+    }
+
+    /* ── Bottom legend ── */
+    #legend {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      padding: 0 20px 40px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 0.75rem;
+      color: #889aaa;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 0.05em;
+    }
+
+    .legend-item:hover {
+      background: rgba(255, 255, 255, 0.09);
+      color: #fff;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── Speed controls ── */
+    #controls {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 0 20px 20px;
+    }
+
+    #controls label {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.7rem;
+      color: #556;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    #speed-slider {
+      -webkit-appearance: none;
+      width: 220px;
+      height: 4px;
+      background: linear-gradient(90deg, #334, #4466aa);
+      border-radius: 4px;
+      outline: none;
+    }
+
+    #speed-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #4488ff;
+      box-shadow: 0 0 8px #4488ff;
+      cursor: pointer;
+    }
+
+    /* ── Shooting stars ── */
+    .shooting-star {
+      position: fixed;
+      width: 2px;
+      height: 80px;
+      background: linear-gradient(to bottom, transparent, #fff, transparent);
+      border-radius: 1px;
+      animation: shoot 1s linear forwards;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    @keyframes shoot {
+      0% {
+        opacity: 0;
+        transform: translateY(-100px) rotate(15deg);
+      }
+
+      20% {
+        opacity: 1;
+      }
+
+      80% {
+        opacity: 0.8;
+      }
+
+      100% {
+        opacity: 0;
+        transform: translateY(300px) rotate(15deg);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <canvas id="stars-canvas"></canvas>
+
+  <header>
+    <h1>☀ Solar System</h1>
+    <p>Click any planet to explore &nbsp;·&nbsp; Drag slider to adjust speed</p>
+  </header>
+
+  <div id="solar-wrap">
+    <div id="orrery">
+      <div id="sun" title="The Sun"></div>
+    </div>
+  </div>
+
+  <div id="controls">
+    <label>Orbital Speed</label>
+    <input type="range" id="speed-slider" min="0.1" max="5" step="0.1" value="1">
+  </div>
+
+  <div id="legend"></div>
+
+  <!-- Info Panel -->
+  <div id="info-panel">
+    <button class="close-btn" id="close-panel">✕</button>
+    <div id="planet-icon-container"></div>
+    <h2 id="panel-name"></h2>
+    <div class="tagline" id="panel-tagline"></div>
+    <div class="stats" id="panel-stats"></div>
+    <p class="desc" id="panel-desc"></p>
+  </div>
+
+  <script>
+    // ─── Star Field ───────────────────────────────────────────────────────────────
+    const canvas = document.getElementById('stars-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      drawStars();
+    }
+
+    function drawStars() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < 400; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        const r = Math.random() * 1.5;
+        const a = Math.random();
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(200,220,255,${a})`;
+        ctx.fill();
+      }
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // ─── Shooting Stars ───────────────────────────────────────────────────────────
+    function spawnShootingStar() {
+      const el = document.createElement('div');
+      el.className = 'shooting-star';
+      el.style.left = Math.random() * 100 + 'vw';
+      el.style.top = Math.random() * 40 + 'vh';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1200);
+    }
+    setInterval(spawnShootingStar, 2200);
+
+    // ─── Planet Data ──────────────────────────────────────────────────────────────
+    const planets = [
+      {
+        name: "Mercury",
+        tagline: "Swift Messenger",
+        radius: 5, orbit: 65, color: "#b5b5b5",
+        gradient: ["#d0ccc8", "#888880"],
+        period: 4,
+        stats: [
+          ["Distance from Sun", "57.9M km"],
+          ["Diameter", "4,879 km"],
+          ["Day Length", "1,408 hours"],
+          ["Moons", "0"]
+        ],
+        desc: "Smallest planet, closest to the Sun. Has extreme temperatures from -180°C to 430°C."
+      },
+      {
+        name: "Venus",
+        tagline: "The Burning Twin",
+        radius: 9, orbit: 100, color: "#f5d87e",
+        gradient: ["#f5e09a", "#c49a30"],
+        period: 10,
+        stats: [
+          ["Distance from Sun", "108M km"],
+          ["Diameter", "12,104 km"],
+          ["Day Length", "5,832 hours"],
+          ["Moons", "0"]
+        ],
+        desc: "Hottest planet (465°C avg). Thick atmosphere of CO₂ and sulphuric acid clouds."
+      },
+      {
+        name: "Earth",
+        tagline: "Our Blue Home",
+        radius: 10, orbit: 145, color: "#4fa3e0",
+        gradient: ["#70c0f0", "#1a7a30"],
+        period: 16,
+        stats: [
+          ["Distance from Sun", "149.6M km"],
+          ["Diameter", "12,742 km"],
+          ["Day Length", "24 hours"],
+          ["Moons", "1"]
+        ],
+        desc: "Only known planet with life. 71% covered by water. One natural satellite: the Moon."
+      },
+      {
+        name: "Mars",
+        tagline: "The Red Planet",
+        radius: 7, orbit: 190, color: "#c1440e",
+        gradient: ["#e07050", "#8b2500"],
+        period: 25,
+        stats: [
+          ["Distance from Sun", "227M km"],
+          ["Diameter", "6,779 km"],
+          ["Day Length", "24.6 hours"],
+          ["Moons", "2"]
+        ],
+        desc: "Home to Olympus Mons, the tallest volcano in the solar system at 21.9 km high."
+      },
+      {
+        name: "Jupiter",
+        tagline: "King of Planets",
+        radius: 26, orbit: 255, color: "#c88b3a",
+        gradient: ["#e8b060", "#8b5020", "#d09050"],
+        period: 45,
+        stats: [
+          ["Distance from Sun", "778M km"],
+          ["Diameter", "139,820 km"],
+          ["Day Length", "9.9 hours"],
+          ["Moons", "95"]
+        ],
+        desc: "Largest planet. The Great Red Spot is a storm larger than Earth, active for 400+ years."
+      },
+      {
+        name: "Saturn",
+        tagline: "Lord of the Rings",
+        radius: 22, orbit: 330, color: "#e8d5a0",
+        gradient: ["#f0e0b0", "#b09040"],
+        period: 70,
+        hasRings: true,
+        stats: [
+          ["Distance from Sun", "1.43B km"],
+          ["Diameter", "116,460 km"],
+          ["Day Length", "10.7 hours"],
+          ["Moons", "146"]
+        ],
+        desc: "Its spectacular rings are made of ice and rock. Saturn is less dense than water!"
+      },
+      {
+        name: "Uranus",
+        tagline: "The Tilted Giant",
+        radius: 16, orbit: 395, color: "#7de8e8",
+        gradient: ["#a0f0f0", "#408888"],
+        period: 100,
+        stats: [
+          ["Distance from Sun", "2.87B km"],
+          ["Diameter", "50,724 km"],
+          ["Day Length", "17.2 hours"],
+          ["Moons", "28"]
+        ],
+        desc: "Rotates on its side at 98°. It is the coldest planet with -224°C recorded."
+      },
+      {
+        name: "Neptune",
+        tagline: "The Distant Blue",
+        radius: 15, orbit: 450, color: "#3060e8",
+        gradient: ["#5080ff", "#1030aa"],
+        period: 130,
+        stats: [
+          ["Distance from Sun", "4.5B km"],
+          ["Diameter", "49,244 km"],
+          ["Day Length", "16.1 hours"],
+          ["Moons", "16"]
+        ],
+        desc: "Strongest winds in the solar system at 2,100 km/h. Has a Great Dark Spot storm."
+      }
+    ];
+
+    // ─── Build Orrery ─────────────────────────────────────────────────────────────
+    const orrery = document.getElementById('orrery');
+    const legend = document.getElementById('legend');
+    let speedMult = 1;
+
+    planets.forEach((p, i) => {
+      // Orbit ring
+      const orbitEl = document.createElement('div');
+      orbitEl.className = 'orbit';
+      orbitEl.style.width = p.orbit * 2 + 'px';
+      orbitEl.style.height = p.orbit * 2 + 'px';
+      orrery.appendChild(orbitEl);
+
+      // Arm (rotates)
+      const arm = document.createElement('div');
+      arm.className = 'orbit-arm';
+      arm.dataset.base = p.period;
+      arm.dataset.orbit = p.orbit;
+      arm.style.animationDuration = p.period + 's';
+      arm.style.animationName = 'revolve';
+
+      // Planet sphere (canvas-drawn)
+      const dot = document.createElement('canvas');
+      dot.className = 'planet-dot';
+      const d = p.radius * 2;
+      const canvasSize = p.hasRings ? Math.ceil(p.radius * 4.5 + 10) : (d + 20);
+      dot.width = canvasSize;
+      dot.height = canvasSize;
+      dot.style.width = canvasSize + 'px';
+      dot.style.height = canvasSize + 'px';
+      dot.style.left = (p.orbit - canvasSize / 2) + 'px';
+      dot.style.top = -canvasSize / 2 + 'px';
+      dot.style.boxShadow = `0 0 ${p.radius + 4}px 2px ${p.color}88`;
+      dot.title = p.name;
+
+      // Draw planet on canvas
+      const pc = dot.getContext('2d');
+      const cx = canvasSize / 2, cy = canvasSize / 2;
+      const grd = pc.createRadialGradient(cx - p.radius * 0.3, cy - p.radius * 0.3, 1, cx, cy, p.radius);
+      const g = p.gradient;
+      g.forEach((c, idx) => grd.addColorStop(idx / (g.length - 1), c));
+      pc.beginPath();
+      pc.arc(cx, cy, p.radius, 0, Math.PI * 2);
+      pc.fillStyle = grd;
+      pc.fill();
+
+      // Saturn rings
+      if (p.hasRings) {
+        pc.save();
+        pc.translate(cx, cy);
+        pc.scale(1, 0.3);
+        pc.beginPath();
+        pc.arc(0, 0, p.radius * 1.7, 0, Math.PI * 2);
+        pc.strokeStyle = 'rgba(200,180,120,0.6)';
+        pc.lineWidth = 5;
+        pc.stroke();
+        pc.beginPath();
+        pc.arc(0, 0, p.radius * 2.0, 0, Math.PI * 2);
+        pc.strokeStyle = 'rgba(180,160,100,0.4)';
+        pc.lineWidth = 3;
+        pc.stroke();
+        pc.restore();
+      }
+
+      // Label
+      const label = document.createElement('div');
+      label.className = 'planet-label';
+      label.textContent = p.name;
+
+      dot.appendChild(label);
+      arm.appendChild(dot);
+      orrery.appendChild(arm);
+
+      // Click info
+      dot.addEventListener('click', () => showInfo(p, dot));
+
+      // Legend item
+      const li = document.createElement('div');
+      li.className = 'legend-item';
+      li.innerHTML = `<span class="legend-dot" style="background:${p.color};box-shadow:0 0 6px ${p.color}"></span>${p.name}`;
+      li.addEventListener('click', () => showInfo(p, dot));
+      legend.appendChild(li);
+    });
+
+    // Sun click
+    document.getElementById('sun').addEventListener('click', () => {
+      showInfo({
+        name: "The Sun",
+        tagline: "Heart of the Solar System",
+        color: "#ffcc00",
+        gradient: ["#fff7a0", "#ffcc00", "#ff6600"],
+        stats: [
+          ["Type", "Yellow Dwarf Star"],
+          ["Diameter", "1,392,700 km"],
+          ["Surface Temp", "5,500 °C"],
+          ["Age", "4.6 Billion Years"]
+        ],
+        desc: "The Sun contains 99.86% of the solar system's mass. Its core reaches 15 million °C where nuclear fusion occurs."
+      }, document.getElementById('sun'));
+    });
+
+    // ─── Speed Slider ─────────────────────────────────────────────────────────────
+    document.getElementById('speed-slider').addEventListener('input', function () {
+      speedMult = parseFloat(this.value);
+      document.querySelectorAll('.orbit-arm').forEach(arm => {
+        const base = parseFloat(arm.dataset.base);
+        arm.style.animationDuration = (base / speedMult) + 's';
+      });
+    });
+
+    // ─── Info Panel ───────────────────────────────────────────────────────────────
+    function showInfo(p, dotEl) {
+      const panel = document.getElementById('info-panel');
+
+      // Icon
+      const ic = document.getElementById('planet-icon-container');
+      ic.innerHTML = '';
+      const cv = document.createElement('canvas');
+      cv.className = 'planet-icon';
+      cv.width = 56; cv.height = 56;
+      const pc = cv.getContext('2d');
+      const grd = pc.createRadialGradient(18, 18, 2, 28, 28, 26);
+      const g = p.gradient || [p.color];
+      g.forEach((c, i) => grd.addColorStop(i / Math.max(g.length - 1, 1), c));
+      pc.beginPath();
+      pc.arc(28, 28, 24, 0, Math.PI * 2);
+      pc.fillStyle = grd;
+      pc.fill();
+      if (p.hasRings) {
+        pc.save(); pc.translate(28, 28); pc.scale(1, 0.3);
+        pc.beginPath(); pc.arc(0, 0, 36, 0, Math.PI * 2);
+        pc.strokeStyle = 'rgba(200,180,120,0.7)'; pc.lineWidth = 5; pc.stroke();
+        pc.restore();
+      }
+      ic.appendChild(cv);
+
+      document.getElementById('panel-name').textContent = p.name;
+      document.getElementById('panel-tagline').textContent = p.tagline || '';
+      document.getElementById('panel-desc').textContent = p.desc || '';
+
+      const statsDiv = document.getElementById('panel-stats');
+      statsDiv.innerHTML = '';
+      (p.stats || []).forEach(([k, v]) => {
+        const row = document.createElement('div');
+        row.className = 'stat-row';
+        row.innerHTML = `<span>${k}</span><span>${v}</span>`;
+        statsDiv.appendChild(row);
+      });
+
+      panel.classList.add('visible');
+    }
+
+    document.getElementById('close-panel').addEventListener('click', () => {
+      document.getElementById('info-panel').classList.remove('visible');
+    });
+
+    // ─── Twinkle stars (re-draw occasionally) ────────────────────────────────────
+    setInterval(() => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < 400; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        const r = Math.random() * 1.5;
+        const a = Math.random() * 0.8 + 0.1;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(200,220,255,${a})`;
+        ctx.fill();
+      }
+    }, 3000);
+  </script>
+</body>
+
+</html>
